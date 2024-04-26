@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { ComputedRef } from 'vue'
 import { getAuth, signOut } from 'firebase/auth'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
+import type { IMenuItem } from '@/interfaces'
 
 const userStore = useUserStore()
 const router = useRouter()
-
-interface IMenuItem {
-  label: string
-  icon: string
-  path: string
-  show: ComputedRef<boolean>
-}
 
 const items = ref<IMenuItem[]>([
   {
