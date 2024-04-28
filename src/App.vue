@@ -12,7 +12,6 @@ const isLoading = ref<boolean>(true)
 onMounted(() => {
   onAuthStateChanged(getAuth(), (user) => {
     if (user) {
-      console.log(user)
       userStore.userId = user.uid
     } else {
       userStore.userId = ''
@@ -24,7 +23,7 @@ onMounted(() => {
 
 <template>
   <div v-if="isLoading" class="progress">
-    <AppProgress />
+    <AppSpinner />
   </div>
   <div v-else class="container">
     <AppHeader />
