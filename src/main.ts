@@ -19,6 +19,10 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import ConfirmDialog from 'primevue/confirmdialog';
 import InlineMessage from 'primevue/inlinemessage';
+import InputNumber from 'primevue/inputnumber';
+import Textarea from 'primevue/textarea';
+import Calendar from 'primevue/calendar';
+import RadioButton from 'primevue/radiobutton';
 
 import App from './App.vue'
 import router from './router'
@@ -50,5 +54,9 @@ app.component('AppDataTable', DataTable);
 app.component('AppColumn', Column);
 app.component('AppDialog', ConfirmDialog);
 app.component('AppMessage', InlineMessage);
+app.component('AppInputNumber', InputNumber);
+app.component('AppTextarea', Textarea);
+app.component('AppCalendar', Calendar);
+app.component('AppRadioButton', RadioButton);
 
 app.mount('#app')
