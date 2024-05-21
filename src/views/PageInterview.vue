@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore'
+import { getFirestore, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore'
 import { useUserStore } from '@/stores/user'
 import type { IInterview, IStage } from '@/interfaces'
-import dayjs from 'dayjs'
 
 const db = getFirestore()
 const useStore = useUserStore()
@@ -18,7 +17,23 @@ const docref = doc(db, `users/${useStore.userId}/interviews`, route.params.id as
 const getData = async () => {
   isLoading.value = true
   const docSnap = await getDoc(docref)
-  interview.value = docSnap.data() as IInterview
+
+  if (docSnap.exists()) {
+    const data = docSnap.data() as IInterview
+
+    if (data.stages && data.stages.length) {
+      data.stages = data.stages.map((stage: IStage) => {
+        if (stage.date && stage.date instanceof Timestamp) {
+          return {
+            ...stage,
+            date: stage.date.toDate()
+          }
+        }
+        return stage
+      })
+    }
+    interview.value = data
+  }
   isLoading.value = false
 }
 
@@ -27,7 +42,7 @@ const addStage = () => {
     if (!interview.value.stages) {
       interview.value.stages = []
     }
-    interview.value.stages.push({ name: '', date: '', description: '' })
+    interview.value.stages.push({ name: '', date: null, description: '' })
   }
 }
 
@@ -41,15 +56,8 @@ const removeStage = (index: number) => {
 
 const saveInterview = async (): Promise<void> => {
   isLoading.value = true
-  await updateDoc(docref, {...interview.value})
+  await updateDoc(docref, { ...interview.value })
   await getData()
-}
-
-const saveDateStage = (index: number) => {
-  if(interview.value?.stages && interview.value.stages.length) {
-    const date = interview.value.stages[index].date
-    interview.value.stages[index].date = dayjs(date).format('DD.MM.YYYY')
-  }
 }
 
 onMounted(async () => await getData())
@@ -102,7 +110,12 @@ onMounted(async () => await getData())
             </div>
             <div class="flex flex-column gap-2">
               <label :for="`stage-date-${index}`">Дата прохождения этапа</label>
-              <AppCalendar :id="`stage-date-${index}`" class="input mb-3" dateFormat="dd.mm.yy" v-model="stage.date" @date-select="saveDateStage(index)" />
+              <AppCalendar
+                :id="`stage-date-${index}`"
+                class="input mb-3"
+                dateFormat="dd.mm.yy"
+                v-model="stage.date"
+              />
             </div>
             <div class="flex flex-column gap-2">
               <label :for="`stage-description-${index}`">Комментарий</label>
