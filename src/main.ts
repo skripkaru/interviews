@@ -25,6 +25,7 @@ import Textarea from 'primevue/textarea';
 import Calendar from 'primevue/calendar';
 import RadioButton from 'primevue/radiobutton';
 import Badge from 'primevue/badge';
+import Chart from 'primevue/chart';
 
 import App from './App.vue'
 import router from './router'
@@ -62,5 +63,6 @@ app.component('AppTextarea', Textarea);
 app.component('AppCalendar', Calendar);
 app.component('AppRadioButton', RadioButton);
 app.component('AppBadge', Badge);
+app.component('AppChart', Chart);
 
 app.mount('#app')

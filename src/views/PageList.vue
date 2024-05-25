@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { getFirestore, collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore'
+import { onMounted, ref } from 'vue'
+import { collection, deleteDoc, doc, getDocs, getFirestore, orderBy, query, where } from 'firebase/firestore'
 import { useUserStore } from '@/stores/user'
 import type { IInterview } from '@/interfaces'
 import { useConfirm } from 'primevue/useconfirm'
@@ -11,9 +11,36 @@ const confirm = useConfirm()
 
 const interviews = ref<IInterview[]>([])
 const isLoading = ref<boolean>(true)
+const selectedFilterResult = ref<string>('')
 
-const getAllInterviews = async <T extends IInterview>(): Promise<T[]> => {
-  const getData = query(collection(db, `users/${userStore.userId}/interviews`), orderBy('createdAt', 'desc'))
+const submitFilter = async (): Promise<void> => {
+  isLoading.value = true
+  interviews.value = await getAllInterviews(true)
+  isLoading.value = false
+}
+
+const clearFilter = async (): Promise<void> => {
+  isLoading.value = true
+  interviews.value = await getAllInterviews()
+  isLoading.value = false
+}
+
+const getAllInterviews = async <T extends IInterview>(isFilter?: boolean): Promise<T[]> => {
+  let getData;
+
+  if (isFilter) {
+    getData = query(
+      collection(db, `users/${userStore.userId}/interviews`),
+      orderBy('createdAt', 'desc'),
+      where('result', '==', selectedFilterResult.value)
+    )
+  } else {
+    getData = query(
+      collection(db, `users/${userStore.userId}/interviews`),
+      orderBy('createdAt', 'desc')
+    )
+  }
+
   const listDocs = await getDocs(getData)
 
   return listDocs.docs.map(doc => doc.data() as T)
@@ -40,21 +67,42 @@ const confirmRemoveInterview = async (id: string): Promise<void> => {
 }
 
 onMounted(async () => {
-  const listInterviews: Array<IInterview> = await getAllInterviews()
-  interviews.value = [...listInterviews]
+  interviews.value = await getAllInterviews()
   isLoading.value = false
 })
 
 </script>
 
 <template>
-  <AppDialog/>
+  <AppDialog />
   <AppSpinner v-if="isLoading" />
-  <AppMessage v-else-if ="!isLoading && !interviews.length" severity="info">
+  <AppMessage v-else-if="!isLoading && !interviews.length" severity="info">
     Нет добавленных собеседований
   </AppMessage>
   <div v-else>
     <h1>Список собеседований</h1>
+    <div class="flex align-items-center gap-3 mb-5">
+      <div class="flex align-items-center">
+        <AppRadioButton
+          inputId="interviewResult1"
+          name="result"
+          value="Refusal"
+          v-model="selectedFilterResult"
+        />
+        <label for="interviewResult1" class="ml-2">Отказ</label>
+      </div>
+      <div class="flex align-items-center">
+        <AppRadioButton
+          inputId="interviewResult2"
+          name="result"
+          value="Offer"
+          v-model="selectedFilterResult"
+        />
+        <label for="interviewResult2" class="ml-2">Оффер</label>
+      </div>
+      <AppButton @click="submitFilter" :disabled="!selectedFilterResult">Применить</AppButton>
+      <AppButton severity="danger" @click="clearFilter" :disabled="!selectedFilterResult">Сбросить</AppButton>
+    </div>
     <AppDataTable :value="interviews">
       <AppColumn field="company" header="Компания"></AppColumn>
       <AppColumn field="vacancyLink" header="Ссылка на вакансию">
@@ -110,16 +158,16 @@ onMounted(async () => {
       <AppColumn header="Зарплатная вилка">
         <template #body="slotProps">
           <span v-if="!slotProps.data.salaryFrom">Не заполнено</span>
-          <span v-else>{{slotProps.data.salaryFrom}} - {{slotProps.data.salaryTo}}</span>
+          <span v-else>{{ slotProps.data.salaryFrom }} - {{ slotProps.data.salaryTo }}</span>
         </template>
       </AppColumn>
       <AppColumn header="Результат">
         <template #body="slotProps">
-          <span v-if="!slotProps.data.result">Не заполнено</span>
+          <span v-if="!slotProps.data.result">В процессе</span>
           <template v-else>
             <AppBadge
               :value="slotProps.data.result === 'Offer' ? 'Оффер' : 'Отказ'"
-              :severity="slotProps.data.result === 'Offer' ? 'success' : 'danger'"/>
+              :severity="slotProps.data.result === 'Offer' ? 'success' : 'danger'" />
           </template>
         </template>
       </AppColumn>
@@ -127,13 +175,13 @@ onMounted(async () => {
         <template #body="slotProps">
           <div class="flex gap-2">
             <RouterLink :to="`/interview/${slotProps.data.id}`">
-              <AppButton icon="pi pi-pencil" text severity="info"/>
+              <AppButton icon="pi pi-pencil" text severity="info" />
             </RouterLink>
             <AppButton
               icon="pi pi-trash"
               text
               severity="danger"
-              @click="confirmRemoveInterview(slotProps.data.id)"/>
+              @click="confirmRemoveInterview(slotProps.data.id)" />
           </div>
         </template>
       </AppColumn>
