@@ -2,19 +2,30 @@
 import { onMounted, ref } from 'vue'
 import { collection, getDocs, getFirestore, orderBy, query } from 'firebase/firestore'
 import { useUserStore } from '@/stores/user'
+import { useLoading } from '@/composables/useLoading'
 import type { IInterview } from '@/interfaces'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
+import type { ChartData } from 'chart.js'
+import { Pie } from 'vue-chartjs'
+
+ChartJS.register(ArcElement, Tooltip, Legend)
 
 const userStore = useUserStore()
 const db = getFirestore()
+const { startLoading, stopLoading } = useLoading()
 
 const interviews = ref<IInterview[]>([])
-const chartData = ref()
+const chartData = ref<ChartData<'pie'>>({
+  datasets: []
+})
 const chartOptions = ref()
 
-onMounted( async () => {
+onMounted(async () => {
+  startLoading()
   interviews.value = await getAllInterviews()
-  chartData.value = setChartData();
-  chartOptions.value = setChartOptions();
+  chartData.value = setChartData()
+  chartOptions.value = setChartOptions()
+  stopLoading()
 })
 
 const getAllInterviews = async <T extends IInterview>(): Promise<T[]> => {
@@ -25,20 +36,18 @@ const getAllInterviews = async <T extends IInterview>(): Promise<T[]> => {
 
   const listDocs = await getDocs(getData)
 
-  return listDocs.docs.map(doc => doc.data() as T)
+  return listDocs.docs.map((doc) => doc.data() as T)
 }
 
 const setChartData = () => {
-  const documentStyle = getComputedStyle(document.body)
-
   const data: number[] = [0, 0, 0]
 
   interviews.value.forEach((interview: IInterview) => {
-    if(interview.result === 'Offer') {
+    if (interview.result === 'Offer') {
       data[0]++
     } else if (interview.result === 'Refusal') {
       data[1]++
-    } else  {
+    } else {
       data[2]++
     }
   })
@@ -48,39 +57,37 @@ const setChartData = () => {
     datasets: [
       {
         data,
-        backgroundColor: [documentStyle.getPropertyValue('--cyan-500'), documentStyle.getPropertyValue('--orange-500'), documentStyle.getPropertyValue('--gray-500')],
-        hoverBackgroundColor: [documentStyle.getPropertyValue('--cyan-400'), documentStyle.getPropertyValue('--orange-400'), documentStyle.getPropertyValue('--gray-400')]
+        backgroundColor: ['#67C23A', '#F56C6C', '#E6A23C']
       }
     ]
   }
 }
 
 const setChartOptions = () => {
-  const documentStyle = getComputedStyle(document.documentElement)
-  const textColor = documentStyle.getPropertyValue('--text-color')
-
   return {
-    plugins: {
-      legend: {
-        labels: {
-          usePointStyle: true,
-          color: textColor
-        }
-      }
-    }
+    responsive: true,
+    maintainAspectRatio: false
   }
 }
 </script>
 
 <template>
-  <div>
-    <h1>Статистика</h1>
-    <div class="card flex justify-content-center">
-      <AppChart type="pie" :data="chartData" :options="chartOptions" class="w-full md:w-30rem" />
-    </div>
-  </div>
+  <el-empty v-if="!interviews.length" description="Нет данных" />
+  <el-card v-else class="card">
+    <template #header>
+      <h1 class="title">Статистика</h1>
+    </template>
+    <Pie :data="chartData" :options="chartOptions" />
+  </el-card>
 </template>
 
 <style scoped>
+.card {
+  max-width: 600px;
+  margin: 0 auto;
+}
 
+.title {
+  margin: 0;
+}
 </style>

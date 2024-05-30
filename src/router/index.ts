@@ -4,10 +4,14 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth'
 
 let isAuth = false
 
-const checkAuth = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
+const checkAuth = (
+  to: RouteLocationNormalized,
+  from: RouteLocationNormalized,
+  next: NavigationGuardNext
+) => {
   if (isAuth) {
-    next();
-    return;
+    next()
+    return
   }
 
   onAuthStateChanged(getAuth(), (user) => {
@@ -16,7 +20,7 @@ const checkAuth = (to: RouteLocationNormalized, from: RouteLocationNormalized, n
     if (user) {
       next()
     } else {
-      next({path: '/auth'})
+      next({ path: '/auth' })
     }
   })
 }

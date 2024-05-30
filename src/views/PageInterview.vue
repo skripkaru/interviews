@@ -3,19 +3,21 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getFirestore, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore'
 import { useUserStore } from '@/stores/user'
+import { useLoading } from '@/composables/useLoading'
 import type { IInterview, IStage } from '@/interfaces'
+import { Plus, Delete, Check } from '@element-plus/icons-vue'
 
 const db = getFirestore()
 const useStore = useUserStore()
 const route = useRoute()
+const { startLoading, stopLoading } = useLoading()
 
-const isLoading = ref<boolean>(true)
+
 const interview = ref<IInterview>()
-
 const docref = doc(db, `users/${useStore.userId}/interviews`, route.params.id as string)
 
 const getData = async () => {
-  isLoading.value = true
+  startLoading()
   const docSnap = await getDoc(docref)
 
   if (docSnap.exists()) {
@@ -34,7 +36,7 @@ const getData = async () => {
     }
     interview.value = data
   }
-  isLoading.value = false
+  stopLoading()
 }
 
 const addStage = () => {
@@ -55,7 +57,7 @@ const removeStage = (index: number) => {
 }
 
 const saveInterview = async (): Promise<void> => {
-  isLoading.value = true
+  startLoading()
   await updateDoc(docref, { ...interview.value })
   await getData()
 }
@@ -64,96 +66,98 @@ onMounted(async () => await getData())
 </script>
 
 <template>
-  <AppSpinner v-if="isLoading" />
-  <div v-else-if="interview?.id && !isLoading" class="content-interview">
-    <AppCard>
-      <template #title>Собеседование в компанию {{ interview.company }}</template>
-      <template #content>
-        <div class="flex flex-column gap-2">
-          <label for="company">Компания</label>
-          <AppInputText id="company" class="input mb-3" v-model="interview.company" />
-        </div>
-        <div class="flex flex-column gap-2">
-          <label for="vacancyLink">Описание вакансии (ссылка)</label>
-          <AppInputText id="vacancyLink" class="input mb-3" v-model="interview.vacancyLink" />
-        </div>
-        <div class="flex flex-column gap-2">
-          <label for="hrName">Контакт (имя)</label>
-          <AppInputText id="hrName" class="input mb-3" v-model="interview.hrName" />
-        </div>
-        <div class="flex flex-column gap-2">
-          <label for="contactTelegram">Telegram username HR</label>
-          <AppInputText id="contactTelegram" class="input mb-3" v-model="interview.contactTelegram" />
-        </div>
-        <div class="flex flex-column gap-2">
-          <label for="contactWhatsApp">Whatsapp HR</label>
-          <AppInputText id="contactWhatsApp" class="input mb-3" v-model="interview.contactWhatsApp" />
-        </div>
-        <div class="flex flex-column gap-2">
-          <label for="contactPhone">Телефон HR</label>
-          <AppInputText id="contactPhone" class="input mb-3" v-model="interview.contactPhone" />
-        </div>
-        <div class="flex flex-wrap gap-3 p-fluid mb-3">
-          <div class="flex-auto">
-            <AppInputNumber inputId="salaryFrom" placeholder="Зарплатная вилка от" v-model="interview.salaryFrom" />
-          </div>
-          <div class="flex-auto">
-            <AppInputNumber inputId="salaryTo" placeholder="Зарплатная вилка до" v-model="interview.salaryTo" />
-          </div>
-        </div>
-        <AppButton class="mb-3" label="Добавить этап" severity="info" icon="pi pi-plus" @click="addStage" />
-        <template v-if="interview.stages">
-          <div v-for="(stage, index) in interview.stages" :key="index" class="interview-stage">
-            <div class="flex flex-column gap-2">
-              <label :for="`stage-name-${index}`">Название этапа</label>
-              <AppInputText :id="`stage-name-${index}`" class="input mb-3" v-model="stage.name" />
-            </div>
-            <div class="flex flex-column gap-2">
-              <label :for="`stage-date-${index}`">Дата прохождения этапа</label>
-              <AppCalendar
-                :id="`stage-date-${index}`"
-                class="input mb-3"
-                dateFormat="dd.mm.yy"
-                v-model="stage.date"
-              />
-            </div>
-            <div class="flex flex-column gap-2">
-              <label :for="`stage-description-${index}`">Комментарий</label>
-              <AppTextarea :id="`stage-description-${index}`" class="input mb-3" rows="5" v-model="stage.description" />
-            </div>
-            <AppButton label="Удалить этап" severity="danger" icon="pi pi-trash" @click="removeStage" />
-          </div>
-        </template>
-        <div class="flex flex-wrap gap-3 mb-3">
-          <div class="flex align-items-center">
-            <AppRadioButton inputId="interviewResult1" name="result" value="Refusal" v-model="interview.result" />
-            <label for="interviewResult1" class="ml-2">Отказ</label>
-          </div>
-          <div class="flex align-items-center">
-            <AppRadioButton inputId="interviewResult2" name="result" value="Offer" v-model="interview.result" />
-            <label for="interviewResult2" class="ml-2">Оффер</label>
-          </div>
-        </div>
-        <AppButton label="Сохранить" icon="pi pi-save" @click="saveInterview" />
+  <el-form v-if="interview?.id" label-position="top">
+    <el-card class="card">
+      <template #header>
+        <h1 class="title">Собеседование в {{ interview.company }}</h1>
       </template>
-    </AppCard>
-  </div>
+      <el-form-item label="Компания">
+        <el-input v-model="interview.company" placeholder="Компания" />
+      </el-form-item>
+      <el-form-item label="Ссылка на вакансию">
+        <el-input v-model="interview.vacancyLink" placeholder="Ссылка на вакансию" />
+      </el-form-item>
+      <el-form-item label="Имя HR">
+        <el-input v-model="interview.hrName" placeholder="Имя HR" />
+      </el-form-item>
+      <el-form-item label="Telegram HR">
+        <el-input v-model="interview.contactTelegram" placeholder="Telegram HR" />
+      </el-form-item>
+      <el-form-item label="WhatsApp HR">
+        <el-input v-model="interview.contactWhatsApp" placeholder="WhatsApp HR" />
+      </el-form-item>
+      <el-form-item label="Телефон HR">
+        <el-input v-model="interview.contactPhone" placeholder="Телефон HR" />
+      </el-form-item>
+      <el-form-item label="Зарплатная вилка">
+        <el-col :span="11">
+          <el-input-number
+            style="width: 100%"
+            v-model="interview.salaryFrom"
+            :controls="false"
+            placeholder="От"
+          />
+        </el-col>
+        <el-col :span="2"></el-col>
+        <el-col :span="11">
+          <el-input-number
+            style="width: 100%"
+            v-model="interview.salaryTo"
+            :controls="false"
+            placeholder="До"
+          />
+        </el-col>
+      </el-form-item>
+      <template v-if="interview.stages">
+        <h2>Этапы</h2>
+        <el-card
+          class="stage"
+          v-for="(stage, index) in interview.stages"
+          :key="index"
+          shadow="never"
+        >
+          <el-form-item label="Название этапа">
+            <el-input v-model="stage.name" placeholder="Название этапа" />
+          </el-form-item>
+          <el-form-item label="Дата прохождения этапа">
+            <el-date-picker
+              style="width: 100%"
+              v-model="stage.date"
+              format="DD.MM.YYYY"
+              placeholder="Дата прохождения этапа"
+            />
+          </el-form-item>
+          <el-form-item label="Комментарий">
+            <el-input type="textarea" v-model="stage.description" placeholder="Комментарий" />
+          </el-form-item>
+          <el-button type="danger" :icon="Delete" @click="removeStage">Удалить этап</el-button>
+        </el-card>
+      </template>
+      <template #footer>
+        <el-form-item>
+          <el-radio-group v-model="interview.result">
+            <el-radio value="Refusal">Отказ</el-radio>
+            <el-radio value="Offer">Оффер</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-button type="info" :icon="Plus" @click="addStage">Добавить этап</el-button>
+        <el-button type="primary" :icon="Check" @click="saveInterview">Сохранить</el-button>
+      </template>
+    </el-card>
+  </el-form>
 </template>
 
 <style scoped>
-.content-interview {
+.card {
   max-width: 600px;
-  margin: auto;
+  margin: 0 auto;
 }
 
-.input {
-  width: 100%;
+.title {
+  margin: 0;
 }
 
-.interview-stage {
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 10px;
-  margin-bottom: 10px;
+.stage {
+  margin-bottom: 16px;
 }
 </style>

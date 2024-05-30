@@ -1,32 +1,47 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { collection, deleteDoc, doc, getDocs, getFirestore, orderBy, query, where } from 'firebase/firestore'
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  getFirestore,
+  orderBy,
+  query,
+  where
+} from 'firebase/firestore'
 import { useUserStore } from '@/stores/user'
+import { useLoading } from '@/composables/useLoading'
 import type { IInterview } from '@/interfaces'
-import { useConfirm } from 'primevue/useconfirm'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Delete, Edit, Phone, Promotion, Message } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const db = getFirestore()
-const confirm = useConfirm()
-
+const { startLoading, stopLoading } = useLoading()
 const interviews = ref<IInterview[]>([])
-const isLoading = ref<boolean>(true)
 const selectedFilterResult = ref<string>('')
 
+onMounted(async () => {
+  startLoading()
+  interviews.value = await getAllInterviews()
+  stopLoading()
+})
+
 const submitFilter = async (): Promise<void> => {
-  isLoading.value = true
+  startLoading()
   interviews.value = await getAllInterviews(true)
-  isLoading.value = false
+  stopLoading()
 }
 
 const clearFilter = async (): Promise<void> => {
-  isLoading.value = true
+  startLoading()
   interviews.value = await getAllInterviews()
-  isLoading.value = false
+  stopLoading()
 }
 
 const getAllInterviews = async <T extends IInterview>(isFilter?: boolean): Promise<T[]> => {
-  let getData;
+  let getData
 
   if (isFilter) {
     getData = query(
@@ -43,173 +58,179 @@ const getAllInterviews = async <T extends IInterview>(isFilter?: boolean): Promi
 
   const listDocs = await getDocs(getData)
 
-  return listDocs.docs.map(doc => doc.data() as T)
+  return listDocs.docs.map((doc) => doc.data() as T)
 }
 
 const confirmRemoveInterview = async (id: string): Promise<void> => {
-  confirm.require({
-    message: 'Вы хотите удалить собеседование?',
-    header: 'Удалить собеседование',
-    icon: 'pi pi-info-circle',
-    rejectLabel: 'Отмена',
-    acceptLabel: 'Удалить',
-    rejectClass: 'p-button-secondary p-button-outlined',
-    acceptClass: 'p-button-danger',
+  const done = async () => {
+    startLoading()
+    await deleteDoc(doc(db, `users/${userStore.userId}/interviews`, id))
+    const listInterviews: Array<IInterview> = await getAllInterviews()
+    interviews.value = [...listInterviews]
+    stopLoading()
+  }
 
-    accept: async () => {
-      isLoading.value = true
-      await deleteDoc(doc(db, `users/${userStore.userId}/interviews`, id))
-      const listInterviews: Array<IInterview> = await getAllInterviews()
-      interviews.value = [...listInterviews]
-      isLoading.value = false
-    }
+  ElMessageBox.confirm('Вы хотите удалить собеседование?', 'Удалить собеседование', {
+    confirmButtonText: 'Удалить',
+    cancelButtonText: 'Отмена',
+    type: 'warning'
   })
+    .then(() => {
+      console.log('confirmRemoveInterview', id)
+      done()
+      ElMessage({
+        type: 'success',
+        message: 'Удаление завершено'
+      })
+    })
+    .catch(() => {
+      ElMessage({
+        type: 'info',
+        message: 'Удаление отменено'
+      })
+    })
 }
-
-onMounted(async () => {
-  interviews.value = await getAllInterviews()
-  isLoading.value = false
-})
-
 </script>
 
 <template>
-  <AppDialog />
-  <AppSpinner v-if="isLoading" />
-  <AppMessage v-else-if="!isLoading && !interviews.length" severity="info">
-    Нет добавленных собеседований
-  </AppMessage>
-  <div v-else>
-    <h1>Список собеседований</h1>
-    <div class="flex align-items-center gap-3 mb-5">
-      <div class="flex align-items-center">
-        <AppRadioButton
-          inputId="interviewResult1"
-          name="result"
-          value="Refusal"
-          v-model="selectedFilterResult"
-        />
-        <label for="interviewResult1" class="ml-2">Отказ</label>
+  <el-dialog />
+  <el-empty v-if="!interviews.length" description="Нет данных" />
+  <el-card v-else>
+    <template #header>
+      <div class="header">
+        <h1 class="title">Список собеседований</h1>
+        <div class="filter">
+          <el-radio-group v-model="selectedFilterResult">
+            <el-radio value="Refusal">Отказ</el-radio>
+            <el-radio value="Offer">Оффер</el-radio>
+          </el-radio-group>
+          <el-button-group>
+            <el-button @click="submitFilter" :disabled="!selectedFilterResult">Применить</el-button>
+            <el-button @click="clearFilter" :disabled="!selectedFilterResult">Сбросить</el-button>
+          </el-button-group>
+        </div>
       </div>
-      <div class="flex align-items-center">
-        <AppRadioButton
-          inputId="interviewResult2"
-          name="result"
-          value="Offer"
-          v-model="selectedFilterResult"
-        />
-        <label for="interviewResult2" class="ml-2">Оффер</label>
-      </div>
-      <AppButton @click="submitFilter" :disabled="!selectedFilterResult">Применить</AppButton>
-      <AppButton severity="danger" @click="clearFilter" :disabled="!selectedFilterResult">Сбросить</AppButton>
-    </div>
-    <AppDataTable :value="interviews">
-      <AppColumn field="company" header="Компания"></AppColumn>
-      <AppColumn field="vacancyLink" header="Ссылка на вакансию">
-        <template #body="slotProps">
-          <a :href="slotProps.data.vacancyLink" target="_blank">{{ slotProps.data.vacancyLink }}</a>
+    </template>
+    <el-table :data="interviews">
+      <el-table-column prop="company" label="Компания" />
+      <el-table-column label="Ссылка на вакансию">
+        <template #default="scope">
+          <el-link type="primary" :href="scope.row.vacancyLink" target="_blank">{{
+              scope.row.vacancyLink
+            }}
+          </el-link>
         </template>
-      </AppColumn>
-      <AppColumn field="hrName" header="Имя HR"></AppColumn>
-      <AppColumn header="Контакты">
-        <template #body="slotProps">
-          <div class="contacts">
-            <a
-              class="contacts__telegram"
-              v-if="slotProps.data.contactTelegram"
-              :href="`https://t.me/${slotProps.data.contactTelegram}`"
+      </el-table-column>
+      <el-table-column prop="hrName" label="Имя HR" />
+      <el-table-column label="Контакты">
+        <template #default="scope">
+          <span
+            v-if="
+              !scope.row.contactTelegram && !scope.row.contactTelegram && !scope.row.contactPhone
+            "
+          >Нет данных</span
+          >
+          <div v-else class="contacts">
+            <el-link
+              :underline="false"
+              v-if="scope.row.contactTelegram"
+              :href="`https://t.me/${scope.row.contactTelegram}`"
               target="_blank"
             >
-              <span class="contacts__icon pi pi-telegram"></span>
-            </a>
-            <a
-              class="contacts__whatsapp"
-              v-if="slotProps.data.contactWhatsApp"
-              :href="`https://wa.me/${slotProps.data.contactWhatsApp}`"
+              <el-icon>
+                <Promotion />
+              </el-icon>
+            </el-link>
+            <el-link
+              :underline="false"
+              v-if="scope.row.contactWhatsApp"
+              :href="`https://wa.me/${scope.row.contactWhatsApp}`"
               target="_blank"
             >
-              <span class="contacts__icon pi pi-whatsapp"></span>
-            </a>
-            <a
-              class="contacts__phone"
-              v-if="slotProps.data.contactPhone"
-              :href="`tel:${slotProps.data.contactPhone}`"
+              <el-icon>
+                <Message />
+              </el-icon>
+            </el-link>
+            <el-link
+              :underline="false"
+              v-if="scope.row.contactPhone"
+              :href="`tel:${scope.row.contactPhone}`"
               target="_blank"
             >
-              <span class="contacts__icon pi pi-phone"></span>
-            </a>
+              <el-icon>
+                <Phone />
+              </el-icon>
+            </el-link>
           </div>
         </template>
-      </AppColumn>
-      <AppColumn header="Пройденные этапы">
-        <template #body="slotProps">
-          <span v-if="!slotProps.data.stages">Не заполнено</span>
-          <div v-else class="interview-stages">
-            <AppBadge
-              v-for="(stage, i) in slotProps.data.stages"
-              :key="i"
-              :value="i + 1"
-              rounded
-              v-tooltip.top="stage.name"
-            />
-          </div>
+      </el-table-column>
+      <el-table-column label="Пройденные этапы">
+        <template #default="scope">
+          <span v-if="!scope.row.stages">Нет данных</span>
+          <el-tooltip
+            v-else
+            v-for="(stage, i) in scope.row.stages"
+            :key="i"
+            effect="dark"
+            :content="stage.name"
+            placement="top"
+          >
+            <el-button size="small" circle>{{ i + 1 }}</el-button>
+          </el-tooltip>
         </template>
-      </AppColumn>
-      <AppColumn header="Зарплатная вилка">
-        <template #body="slotProps">
-          <span v-if="!slotProps.data.salaryFrom">Не заполнено</span>
-          <span v-else>{{ slotProps.data.salaryFrom }} - {{ slotProps.data.salaryTo }}</span>
+      </el-table-column>
+      <el-table-column label="Зарплатная вилка">
+        <template #default="scope">
+          <span v-if="!scope.row.salaryFrom">Нет данных</span>
+          <span v-else>{{ scope.row.salaryFrom }} - {{ scope.row.salaryTo }} ₽</span>
         </template>
-      </AppColumn>
-      <AppColumn header="Результат">
-        <template #body="slotProps">
-          <span v-if="!slotProps.data.result">В процессе</span>
-          <template v-else>
-            <AppBadge
-              :value="slotProps.data.result === 'Offer' ? 'Оффер' : 'Отказ'"
-              :severity="slotProps.data.result === 'Offer' ? 'success' : 'danger'" />
-          </template>
+      </el-table-column>
+      <el-table-column label="Результат">
+        <template #default="scope">
+          <el-tag v-if="!scope.row.result" type="warning">В процессе</el-tag>
+          <el-tag v-else :type="scope.row.result === 'Offer' ? 'success' : 'danger'">
+            {{ scope.row.result === 'Offer' ? 'Оффер' : 'Отказ' }}
+          </el-tag>
         </template>
-      </AppColumn>
-      <AppColumn>
-        <template #body="slotProps">
-          <div class="flex gap-2">
-            <RouterLink :to="`/interview/${slotProps.data.id}`">
-              <AppButton icon="pi pi-pencil" text severity="info" />
-            </RouterLink>
-            <AppButton
-              icon="pi pi-trash"
-              text
-              severity="danger"
-              @click="confirmRemoveInterview(slotProps.data.id)" />
-          </div>
+      </el-table-column>
+      <el-table-column label="Операции">
+        <template #default="scope">
+          <el-button link type="primary" @click="$router.push(`/interview/${scope.row.id}`)">
+            <el-icon>
+              <Edit />
+            </el-icon>
+          </el-button>
+          <el-button link type="danger" @click="confirmRemoveInterview(scope.row.id)">
+            <el-icon>
+              <Delete />
+            </el-icon>
+          </el-button>
         </template>
-      </AppColumn>
-    </AppDataTable>
-  </div>
+      </el-table-column>
+    </el-table>
+  </el-card>
 </template>
 
 <style scoped>
-.contacts {
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  margin: 0;
+}
+
+.filter {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-.contacts__telegram {
-  color: #0088cc;
-}
-
-.contacts__whatsapp {
-  color: #25d366;
-}
-
-.contacts__phone {
-  color: #371777;
-}
-
-.interview-stages {
+.contacts {
   display: flex;
-  gap: 5px;
+  align-items: center;
+  gap: 16px;
 }
 </style>

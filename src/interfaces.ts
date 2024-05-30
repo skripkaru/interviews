@@ -2,7 +2,7 @@ import type { ComputedRef } from 'vue'
 
 export interface IMenuItem {
   label: string
-  icon: string
+  icon: string | Object
   path: string
   show: ComputedRef<boolean>
 }
@@ -27,4 +27,3 @@ export interface IStage {
   date: null | Date
   description: string
 }
-
