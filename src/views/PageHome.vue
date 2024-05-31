@@ -41,52 +41,44 @@ const addNewInterview = async (): Promise<void> => {
     await setDoc(doc(db, `users/${userStore.userId}/interviews`, payload.id), payload).then(() => {
       router.push('/list')
     })
+    stopLoading()
   }
 }
 </script>
 
 <template>
-  <el-card class="card">
-    <template #header>
-      <h1 class="title">Новое собеседование</h1>
-    </template>
-    <el-form label-position="top">
-      <el-form-item label="Компания">
-        <el-input v-model="company" placeholder="Компания" />
-      </el-form-item>
-      <el-form-item label="Ссылка на вакансию">
-        <el-input v-model="vacancyLink" placeholder="Ссылка на вакансию" />
-      </el-form-item>
-      <el-form-item label="Имя HR">
-        <el-input v-model="hrName" placeholder="Имя HR" />
-      </el-form-item>
-      <el-form-item label="Telegram HR">
-        <el-input v-model="contactTelegram" placeholder="Telegram HR" />
-      </el-form-item>
-      <el-form-item label="WhatsApp HR">
-        <el-input v-model="contactWhatsApp" placeholder="WhatsApp HR" />
-      </el-form-item>
-      <el-form-item label="Телефон HR">
-        <el-input v-model="contactPhone" placeholder="Телефон HR" />
-      </el-form-item>
-      <el-button
-        type="primary"
-        @click="addNewInterview"
-        :disabled="disabledSaveButton"
-      >
-        Создать собеседование
-      </el-button>
-    </el-form>
-  </el-card>
+  <el-row justify="center">
+    <el-col :xs="24" :sm="16" :md="12" :lg="10" :xl="8">
+      <el-card>
+        <template #header>
+          <h1>Новое собеседование</h1>
+        </template>
+        <el-form label-position="top">
+          <el-form-item label="Компания">
+            <el-input v-model="company" placeholder="Компания" />
+          </el-form-item>
+          <el-form-item label="Ссылка на вакансию">
+            <el-input v-model="vacancyLink" placeholder="Ссылка на вакансию" />
+          </el-form-item>
+          <el-form-item label="Имя HR">
+            <el-input v-model="hrName" placeholder="Имя HR" />
+          </el-form-item>
+          <el-form-item label="Telegram HR">
+            <el-input v-model="contactTelegram" placeholder="Telegram HR" />
+          </el-form-item>
+          <el-form-item label="WhatsApp HR">
+            <el-input v-model="contactWhatsApp" placeholder="WhatsApp HR" />
+          </el-form-item>
+          <el-form-item label="Телефон HR">
+            <el-input v-model="contactPhone" placeholder="Телефон HR" />
+          </el-form-item>
+          <el-button type="primary" @click="addNewInterview" :disabled="disabledSaveButton">
+            Создать собеседование
+          </el-button>
+        </el-form>
+      </el-card>
+    </el-col>
+  </el-row>
 </template>
 
-<style scoped>
-.card {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.title {
-  margin: 0;
-}
-</style>
+<style scoped lang="scss"></style>

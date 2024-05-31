@@ -73,21 +73,16 @@ const setChartOptions = () => {
 
 <template>
   <el-empty v-if="!interviews.length" description="Нет данных" />
-  <el-card v-else class="card">
-    <template #header>
-      <h1 class="title">Статистика</h1>
-    </template>
-    <Pie :data="chartData" :options="chartOptions" />
-  </el-card>
+  <el-row v-else justify="center">
+    <el-col :xs="24" :sm="16" :md="12" :lg="10" :xl="8">
+      <el-card>
+        <template #header>
+          <h1>Статистика</h1>
+        </template>
+        <Pie :data="chartData" :options="chartOptions" />
+      </el-card>
+    </el-col>
+  </el-row>
 </template>
 
-<style scoped>
-.card {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.title {
-  margin: 0;
-}
-</style>
+<style scoped lang="scss"></style>

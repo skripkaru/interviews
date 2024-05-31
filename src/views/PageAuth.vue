@@ -75,38 +75,33 @@ const submitForm = () => {
 </script>
 
 <template>
-  <el-card class="card">
-    <template #header>
-      <h1 class="title">{{ submitButtonText }}</h1>
-      <el-text class="text">
-        {{ subtitleText }}
-        <el-link type="primary" @click="toggleAuth">{{ linkAccountText }}</el-link>
-      </el-text>
-    </template>
-    <el-form label-position="top" @submit.prevent="submitForm">
-      <el-form-item label="Email">
-        <el-input v-model="email" type="text" placeholder="Email" />
-      </el-form-item>
-      <el-form-item label="Пароль">
-        <el-input v-model="password" type="password" placeholder="Пароль" />
-      </el-form-item>
-      <el-button style="width: 100%" native-type="submit" :icon="User">
-        {{ submitButtonText }}
-      </el-button>
-    </el-form>
-  </el-card>
+  <el-row justify="center">
+    <el-col :xs="24" :sm="16" :md="12" :lg="10" :xl="8">
+      <el-card>
+        <template #header>
+          <h1>{{ submitButtonText }}</h1>
+          <el-text class="text">
+            {{ subtitleText }}
+            <el-link type="primary" @click="toggleAuth">{{ linkAccountText }}</el-link>
+          </el-text>
+        </template>
+        <el-form label-position="top" @submit.prevent="submitForm">
+          <el-form-item label="Email">
+            <el-input v-model="email" type="text" placeholder="Email" />
+          </el-form-item>
+          <el-form-item label="Пароль">
+            <el-input v-model="password" type="password" placeholder="Пароль" />
+          </el-form-item>
+          <el-button style="width: 100%" native-type="submit" :icon="User">
+            {{ submitButtonText }}
+          </el-button>
+        </el-form>
+      </el-card>
+    </el-col>
+  </el-row>
 </template>
 
-<style scoped>
-.card {
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.title {
-  margin-top: 0;
-}
-
+<style scoped lang="scss">
 .text {
   display: flex;
   align-items: center;

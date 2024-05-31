@@ -46,7 +46,7 @@ onMounted(() => {
     } else {
       userStore.userId = ''
     }
-   stopLoading()
+    stopLoading()
   })
 })
 
@@ -59,22 +59,24 @@ const signOutMethod = async (): Promise<void> => {
 <template>
   <el-container class="layout">
     <el-header>
-      <el-menu mode="horizontal" :default-active="'/'" :ellipsis="false" :router="true">
-        <template v-for="(item, index) in items">
-          <el-menu-item v-if="item.show" :index="item.path" :key="index">
+      <el-scrollbar>
+        <el-menu mode="horizontal" :default-active="'/'" :ellipsis="false" :router="true">
+          <template v-for="(item, index) in items">
+            <el-menu-item v-if="item.show" :index="item.path" :key="index">
+              <el-icon>
+                <component :is="item.icon" />
+              </el-icon>
+              {{ item.label }}
+            </el-menu-item>
+          </template>
+          <el-menu-item v-if="userStore.userId" @click="signOutMethod">
             <el-icon>
-              <component :is="item.icon" />
+              <House />
             </el-icon>
-            {{ item.label }}
+            Выход
           </el-menu-item>
-        </template>
-        <el-menu-item v-if="userStore.userId" @click="signOutMethod">
-          <el-icon>
-            <House />
-          </el-icon>
-          Выход
-        </el-menu-item>
-      </el-menu>
+        </el-menu>
+      </el-scrollbar>
     </el-header>
     <el-main>
       <RouterView />
@@ -84,8 +86,8 @@ const signOutMethod = async (): Promise<void> => {
 
 <style scoped>
 .layout {
-  height: 100%;
-  display: grid;
-  grid-template-rows: auto 1fr;
+  //height: 100%;
+  //display: grid;
+  //grid-template-rows: auto 1fr;
 }
 </style>
