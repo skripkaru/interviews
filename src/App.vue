@@ -5,28 +5,28 @@ import { useUserStore } from '@/stores/user'
 import { useLoading } from '@/composables/useLoading'
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'
 import type { IMenuItem } from '@/interfaces'
-import { House, List, PieChart, Plus, User } from '@element-plus/icons-vue'
+import { PieChart, Plus, User, Expand, Document, SwitchButton } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const router = useRouter()
 const { startLoading, stopLoading } = useLoading()
 
 const items = ref<IMenuItem[]>([
+  // {
+  //   label: 'Войти',
+  //   icon: markRaw(User),
+  //   path: '/auth',
+  //   show: computed((): boolean => !userStore.userId)
+  // },
   {
-    label: 'Авторизация',
-    icon: markRaw(User),
-    path: '/auth',
-    show: computed((): boolean => !userStore.userId)
-  },
-  {
-    label: 'Новое собеседование',
+    label: 'Добавить',
     icon: markRaw(Plus),
     path: '/',
     show: computed((): boolean => !!userStore.userId)
   },
   {
-    label: 'Список собеседований',
-    icon: markRaw(List),
+    label: 'Собеседования',
+    icon: markRaw(Document),
     path: '/list',
     show: computed((): boolean => !!userStore.userId)
   },
@@ -37,6 +37,8 @@ const items = ref<IMenuItem[]>([
     show: computed((): boolean => !!userStore.userId)
   }
 ])
+
+const isCollapse = ref(true)
 
 onMounted(() => {
   startLoading()
@@ -58,36 +60,52 @@ const signOutMethod = async (): Promise<void> => {
 
 <template>
   <el-container class="layout">
-    <el-header>
-      <el-scrollbar>
-        <el-menu mode="horizontal" :default-active="'/'" :ellipsis="false" :router="true">
-          <template v-for="(item, index) in items">
-            <el-menu-item v-if="item.show" :index="item.path" :key="index">
-              <el-icon>
-                <component :is="item.icon" />
-              </el-icon>
-              {{ item.label }}
-            </el-menu-item>
-          </template>
-          <el-menu-item v-if="userStore.userId" @click="signOutMethod">
+    <el-aside v-if="userStore.userId" class="aside" :width="isCollapse ? '64px' : '200px'">
+      <el-menu style="height: 100%" :collapse="isCollapse" :router="true">
+        <template v-for="(item, index) in items">
+          <el-menu-item v-if="item.show" :index="item.path" :key="index">
             <el-icon>
-              <House />
+              <component :is="item.icon" />
             </el-icon>
-            Выход
+            <template #title>{{ item.label }}</template>
           </el-menu-item>
-        </el-menu>
-      </el-scrollbar>
-    </el-header>
-    <el-main>
-      <RouterView />
-    </el-main>
+        </template>
+      </el-menu>
+    </el-aside>
+    <el-container>
+      <el-header class="header">
+        <div>
+          <el-button
+            v-if="userStore.userId"
+            @click="isCollapse = !isCollapse"
+            :icon="Expand"
+            text
+          />
+        </div>
+        <el-button v-if="userStore.userId" @click="signOutMethod" :icon="SwitchButton" text>
+          Выход
+        </el-button>
+        <el-button v-else @click="router.push('/auth')" :icon="User" text>Вход</el-button>
+      </el-header>
+      <el-main>
+        <RouterView />
+      </el-main>
+    </el-container>
   </el-container>
 </template>
 
 <style scoped>
 .layout {
-  //height: 100%;
-  //display: grid;
-  //grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+
+.aside {
+  transition: width var(--el-transition-duration);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style>
