@@ -1,14 +1,22 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile
+} from 'firebase/auth'
 import { useLoading } from '@/composables/useLoading'
 import { useRouter } from 'vue-router'
 import { User } from '@element-plus/icons-vue'
 import { ElNotification } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const router = useRouter()
 const { startLoading, stopLoading } = useLoading()
 
+const displayName = ref<string>('')
 const email = ref<string>('')
 const password = ref<string>('')
 const isLogin = ref<boolean>(true)
@@ -32,7 +40,16 @@ const toggleAuth = () => {
 const signUp = async (): Promise<void> => {
   startLoading()
   try {
-    await createUserWithEmailAndPassword(getAuth(), email.value, password.value)
+    const auth = getAuth()
+    const userCredentials = await createUserWithEmailAndPassword(auth, email.value, password.value)
+
+    if (userCredentials) {
+      await updateProfile(userCredentials.user, {
+        displayName: displayName.value
+      })
+      userStore.setUser(userCredentials.user)
+    }
+
     await router.push('/')
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -50,7 +67,8 @@ const signUp = async (): Promise<void> => {
 const signIn = async (): Promise<void> => {
   startLoading()
   try {
-    await signInWithEmailAndPassword(getAuth(), email.value, password.value)
+    const auth = getAuth()
+    await signInWithEmailAndPassword(auth, email.value, password.value)
     await router.push('/')
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -86,6 +104,9 @@ const submitForm = () => {
           </el-text>
         </template>
         <el-form label-position="top" @submit.prevent="submitForm">
+          <el-form-item v-if="!isLogin" label="Имя">
+            <el-input v-model="displayName" type="text" placeholder="Имя" />
+          </el-form-item>
           <el-form-item label="Email">
             <el-input v-model="email" type="text" placeholder="Email" />
           </el-form-item>

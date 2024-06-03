@@ -2,25 +2,19 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 
-let isAuth = false
-
 const checkAuth = (
   to: RouteLocationNormalized,
   from: RouteLocationNormalized,
   next: NavigationGuardNext
 ) => {
-  if (isAuth) {
-    next()
-    return
-  }
-
-  onAuthStateChanged(getAuth(), (user) => {
-    isAuth = true
-
-    if (user) {
-      next()
+  const auth = getAuth()
+  onAuthStateChanged(auth, (user) => {
+    if (!user && to.path !== '/auth') {
+      next('/auth')
+    } else if (user && to.path === '/auth') {
+      next(from.path ? from.path : '/')
     } else {
-      next({ path: '/auth' })
+      next()
     }
   })
 }

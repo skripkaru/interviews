@@ -12,12 +12,6 @@ const router = useRouter()
 const { startLoading, stopLoading } = useLoading()
 
 const items = ref<IMenuItem[]>([
-  // {
-  //   label: 'Войти',
-  //   icon: markRaw(User),
-  //   path: '/auth',
-  //   show: computed((): boolean => !userStore.userId)
-  // },
   {
     label: 'Добавить',
     icon: markRaw(Plus),
@@ -44,9 +38,9 @@ onMounted(() => {
   startLoading()
   onAuthStateChanged(getAuth(), (user) => {
     if (user) {
-      userStore.userId = user.uid
+      userStore.setUser(user)
     } else {
-      userStore.userId = ''
+      userStore.setUser(null)
     }
     stopLoading()
   })
@@ -61,7 +55,7 @@ const signOutMethod = async (): Promise<void> => {
 <template>
   <el-container class="layout">
     <el-aside v-if="userStore.userId" class="aside" :width="isCollapse ? '64px' : '200px'">
-      <el-menu style="height: 100%" :collapse="isCollapse" :router="true">
+      <el-menu class="menu" :collapse="isCollapse" :router="true">
         <template v-for="(item, index) in items">
           <el-menu-item v-if="item.show" :index="item.path" :key="index">
             <el-icon>
@@ -70,24 +64,31 @@ const signOutMethod = async (): Promise<void> => {
             <template #title>{{ item.label }}</template>
           </el-menu-item>
         </template>
+        <el-menu-item class="logout" v-if="userStore.userId" @click="signOutMethod">
+          <el-icon>
+            <SwitchButton />
+          </el-icon>
+          <template #title>Выход</template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
       <el-header class="header">
-        <div>
-          <el-button
-            v-if="userStore.userId"
-            @click="isCollapse = !isCollapse"
-            :icon="Expand"
-            text
-          />
-        </div>
-        <el-button v-if="userStore.userId" @click="signOutMethod" :icon="SwitchButton" text>
-          Выход
-        </el-button>
-        <el-button v-else @click="router.push('/auth')" :icon="User" text>Вход</el-button>
+        <el-button
+          class="collapse"
+          v-if="userStore.userId"
+          @click="isCollapse = !isCollapse"
+          :icon="Expand"
+          text
+        />
+        <el-text v-if="userStore.userId && userStore.userName">
+          <el-icon>
+            <User />
+          </el-icon>
+          {{ userStore.userName }}
+        </el-text>
       </el-header>
-      <el-main>
+      <el-main class="main">
         <RouterView />
       </el-main>
     </el-container>
@@ -103,9 +104,23 @@ const signOutMethod = async (): Promise<void> => {
   transition: width var(--el-transition-duration);
 }
 
+.menu {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.logout {
+  margin-top: auto;
+}
+
+.collapse {
+  margin-right: auto;
 }
 </style>
