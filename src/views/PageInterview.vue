@@ -8,16 +8,16 @@ import type { IInterview, IStage } from '@/interfaces'
 import { Plus, Delete, Check } from '@element-plus/icons-vue'
 
 const db = getFirestore()
-const useStore = useUserStore()
+const userStore = useUserStore()
 const route = useRoute()
 const { startLoading, stopLoading } = useLoading()
 
 const interview = ref<IInterview>()
-const docref = doc(db, `users/${useStore.userId}/interviews`, route.params.id as string)
+const docRef = doc(db, `users/${userStore.userId}/interviews`, route.params.id as string)
 
 const getData = async () => {
   startLoading()
-  const docSnap = await getDoc(docref)
+  const docSnap = await getDoc(docRef)
 
   if (docSnap.exists()) {
     const data = docSnap.data() as IInterview
@@ -57,7 +57,7 @@ const removeStage = (index: number) => {
 
 const saveInterview = async (): Promise<void> => {
   startLoading()
-  await updateDoc(docref, { ...interview.value })
+  await updateDoc(docRef, { ...interview.value })
   await getData()
 }
 

@@ -196,7 +196,8 @@ const confirmRemoveInterview = async (id: string): Promise<void> => {
             </el-table-column>
             <el-table-column label="Зарплатная вилка">
               <template #default="scope">
-                <span v-if="!scope.row.salaryFrom">Нет данных</span>
+                <span v-if="!scope.row.salaryFrom && !scope.row.salaryTo">Нет данных</span>
+                <span v-else-if="!scope.row.salaryTo">{{ scope.row.salaryFrom }} ₽</span>
                 <span v-else>{{ scope.row.salaryFrom }} - {{ scope.row.salaryTo }} ₽</span>
               </template>
             </el-table-column>

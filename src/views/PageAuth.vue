@@ -16,7 +16,7 @@ const userStore = useUserStore()
 const router = useRouter()
 const { startLoading, stopLoading } = useLoading()
 
-const displayName = ref<string>('')
+const name = ref<string>('')
 const email = ref<string>('')
 const password = ref<string>('')
 const isLogin = ref<boolean>(true)
@@ -45,7 +45,7 @@ const signUp = async (): Promise<void> => {
 
     if (userCredentials) {
       await updateProfile(userCredentials.user, {
-        displayName: displayName.value
+        displayName: name.value
       })
       userStore.setUser(userCredentials.user)
     }
@@ -105,7 +105,7 @@ const submitForm = () => {
         </template>
         <el-form label-position="top" @submit.prevent="submitForm">
           <el-form-item v-if="!isLogin" label="Имя">
-            <el-input v-model="displayName" type="text" placeholder="Имя" />
+            <el-input v-model="name" type="text" placeholder="Имя" />
           </el-form-item>
           <el-form-item label="Email">
             <el-input v-model="email" type="text" placeholder="Email" />
